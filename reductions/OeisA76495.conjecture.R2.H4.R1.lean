@@ -2,7 +2,7 @@ import OMAReductions.R_OeisA76495_conjecture_R2
 import Mathlib
 
 /-! Factor out the full two-power. In the two specified valuation residue
-classes, up to seven support primes force the quotient to be two and
+classes, up to sixteen support primes force the quotient to be two and
 give an incompatible congruence on the odd square. -/
 
 open ArithmeticFunction Finset
@@ -214,7 +214,7 @@ private theorem sigma_five_lower {m : ℕ} (hm : 0 < m) (h : IsSquare m)
 
 theorem excludes_of_odd_part_abundance {a m k : ℕ}
     (ha : a%4=3 ∨ a%10=9) (hm : 0 < m) (hs : IsSquare m)
-    (hsmall : sigma 1 m < 2*m) :
+    (hsmall : 2*sigma 1 m < 5*m) :
     (2^(a+1)-1)*sigma 1 m ≠ k*(2^a*m)+5 := by
   intro heq
   let A := 2^a
@@ -239,17 +239,17 @@ theorem excludes_of_odd_part_abundance {a m k : ℕ}
     have hMlarge : A+6 ≤ M := by omega
     have hMbig := Nat.mul_le_mul_right m hMlarge
     nlinarith only [hmul,hMbig,hm]
-  have hhigh : M*G < 4*(A*m) := by
-    have hGB : G < 2*m := hsmall
-    have hmul := Nat.mul_lt_mul_of_pos_left hGB hMpos
+  have hhigh : M*G < 5*(A*m) := by
+    have hGB : 2*G < 5*m := hsmall
+    have hmul := Nat.mul_lt_mul_of_pos_left hGB (show 0<A by omega)
     have hshort : M ≤ 2*A := by omega
-    have hmul' := Nat.mul_le_mul_right m hshort
+    have hmul' := Nat.mul_le_mul_right G hshort
     nlinarith only [hmul,hmul']
   have hk2 : 2 ≤ k := by
     by_contra! hn
     have h := Nat.mul_le_mul_right (A*m) (show k≤1 by omega)
     nlinarith only [h,hlow,heq]
-  have hk4 : k < 4 := by
+  have hk5 : k < 5 := by
     by_contra! hn
     have h := Nat.mul_le_mul_right (A*m) hn
     nlinarith only [h,hhigh,heq]
@@ -257,13 +257,35 @@ theorem excludes_of_odd_part_abundance {a m k : ℕ}
     have h2 : 2 ∣ a+1 := by
       exact ⟨(a+1)/2, by omega⟩
     simpa [M] using Nat.pow_sub_one_dvd_pow_sub_one 2 h2
-  have hk : k = 2 := by
-    by_contra! hn
-    have h3 : k=3 := by omega
-    have hs : 3 ∣ k*(A*m)+5 := heq ▸ dvd_mul_of_dvd_left hdiv3 _
-    rw [h3] at hs
-    exact (by decide : ¬ 3∣5)
-      ((Nat.dvd_add_iff_right (dvd_mul_right 3 (A*m))).mpr hs)
+  have hdiv3eq : 3∣k*(A*m)+5 := heq ▸ dvd_mul_of_dvd_left hdiv3 _
+  have hm3 : ¬3∣m := by
+    intro hd
+    have hN3 : 3∣k*(A*m) := dvd_mul_of_dvd_right (dvd_mul_of_dvd_right hd _) _
+    exact (by decide : ¬3∣5) ((Nat.dvd_add_iff_right hN3).mpr hdiv3eq)
+  have hmodA : A%3=2 := by
+    have ha' : a=2*(a/2)+1 := by omega
+    have hA' : 2^a=2*(4^(a/2)) := by
+      conv_lhs => rw [ha']
+      rw [pow_succ', pow_mul]
+      norm_num
+    dsimp [A]
+    rw [hA', Nat.mul_mod]
+    have hmodpow : 4^(a/2)%3=1 := by
+      rw [Nat.pow_mod]
+      norm_num
+    simp [hmodpow]
+  have hmodm : m%3=1 := by
+    obtain ⟨u,hu⟩ := hs
+    have hnot : m%3≠0 := fun h => hm3 (Nat.dvd_of_mod_eq_zero h)
+    rw [hu,Nat.mul_mod] at hnot ⊢
+    have hlt : u%3<3 := Nat.mod_lt _ (by decide)
+    generalize hr : u%3=r at hlt hnot ⊢
+    interval_cases r <;> norm_num at *
+  have hk : k=2 := by
+    have hmod := Nat.dvd_iff_mod_eq_zero.mp hdiv3eq
+    rw [Nat.add_mod, Nat.mul_mod k, Nat.mul_mod A, hmodA, hmodm] at hmod
+    norm_num at hmod
+    omega
   have hN : 2*(A*m)=M*m+m := by
     have := congrArg (fun n => n*m) hM
     nlinarith only [this]
@@ -366,15 +388,15 @@ theorem product_profile_bound {ι : Type*} (I : Finset ι) (p q e : ι → ℕ)
     (fun i hi => geometric_lower_base_bound (hq i hi) (hp i hi))
 
 private def base : ℕ → ℕ
-  | 0 => 5 | 1 => 7 | 2 => 11 | 3 => 13 | 4 => 17 | 5 => 19 | _ => 0
+  | 0 => 5 | 1 => 7 | 2 => 11 | 3 => 13 | 4 => 17
+  | 5 => 19 | 6 => 23 | 7 => 29 | 8 => 31 | 9 => 37
+  | 10 => 41 | 11 => 43 | 12 => 47 | 13 => 53 | 14 => 59 | _ => 0
 
-private theorem base_ratio (k : ℕ) (hk : k ≤ 6) :
-    (∏ i : Fin k, base i.val) < 2 * (∏ i : Fin k, (base i.val - 1)) := by
-  have hcases : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 := by omega
-  rcases hcases with h | h | h | h | h | h | h <;> subst k <;>
-    norm_num [base] <;> decide +kernel
+private theorem base_ratio (k : ℕ) (hk : k ≤ 15) :
+    2 * (∏ i : Fin k, base i.val) < 5 * (∏ i : Fin k, (base i.val - 1)) := by
+  interval_cases k <;> norm_num [base] <;> decide +kernel
 
-private theorem rank_lower {m k : ℕ} (hs : m.primeFactors.card = k) (hk : k ≤ 6)
+private theorem rank_lower {m k : ℕ} (hs : m.primeFactors.card = k) (hk : k ≤ 15)
     (hprime : ∀ p ∈ m.primeFactors, p.Prime) (hlower : ∀ p ∈ m.primeFactors, 5 ≤ p) :
     ∀ i : Fin k, base i.val ≤ m.primeFactors.orderEmbOfFin hs i := by
   intro i
@@ -391,7 +413,7 @@ private theorem rank_lower {m k : ℕ} (hs : m.primeFactors.card = k) (hk : k �
       hprime (f j) (Finset.orderEmbOfFin_mem _ _ _),
       hlower (f j) (Finset.orderEmbOfFin_mem _ _ _)⟩
   have hcount : ((Finset.range (base i.val)).filter (fun q => q.Prime ∧ 5 ≤ q)).card = i.val := by
-    have hi : i.val < 6 := lt_of_lt_of_le i.isLt hk
+    have hi : i.val < 15 := lt_of_lt_of_le i.isLt hk
     interval_cases hval : i.val <;> norm_num [base, hval] <;> decide +kernel
   have hprecard : (pre.image f).card = i.val + 1 := by
     rw [Finset.card_image_of_injective _ f.injective, Fin.card_Iic]
@@ -399,13 +421,13 @@ private theorem rank_lower {m k : ℕ} (hs : m.primeFactors.card = k) (hk : k �
   rw [hprecard, hcount] at hcard
   omega
 
-theorem sigma_lt_two_of_small_prime_support {m : ℕ} (hm : Odd m)
-    (h3 : ¬ 3 ∣ m) (hcard : m.primeFactors.card ≤ 6) : sigma 1 m < 2*m := by
+theorem scaled_sigma_lt_five_of_small_prime_support {m : ℕ} (hm : Odd m)
+    (h3 : ¬ 3 ∣ m) (hcard : m.primeFactors.card ≤ 15) : 2*sigma 1 m < 5*m := by
   have hm0 : m ≠ 0 := by
     obtain ⟨k, hk⟩ := hm
     omega
   let k := m.primeFactors.card
-  have hk : k ≤ 6 := hcard
+  have hk : k ≤ 15 := hcard
   let p := m.primeFactors.orderEmbOfFin rfl
   let e : Fin k → ℕ := fun i => m.factorization (p i)
   have hmem (i : Fin k) : p i ∈ m.primeFactors := Finset.orderEmbOfFin_mem _ _ _
@@ -429,11 +451,11 @@ theorem sigma_lt_two_of_small_prime_support {m : ℕ} (hm : Odd m)
   let q : Fin k → ℕ := fun i => base i.val
   have hq : ∀ i, 2 ≤ q i := by
     intro i
-    have hi : i.val < 6 := lt_of_lt_of_le i.isLt hk
+    have hi : i.val < 15 := lt_of_lt_of_le i.isLt hk
     interval_cases hval : i.val <;> norm_num [q, base, hval]
   have hD : 0 < ∏ i : Fin k, (q i - 1) :=
     Finset.prod_pos fun i _ => by have := hq i; omega
-  have hQ : (∏ i : Fin k, q i) < 2 * (∏ i : Fin k, (q i - 1)) := by
+  have hQ : 2 * (∏ i : Fin k, q i) < 5 * (∏ i : Fin k, (q i - 1)) := by
     exact base_ratio k hk
   have hval : (∏ i : Fin k, p i ^ e i) = m := by
     have hprod := (Nat.prod_primeFactors_pow_factorization hm0).symm
@@ -457,11 +479,9 @@ theorem sigma_lt_two_of_small_prime_support {m : ℕ} (hm : Odd m)
   rw [hval, hsum] at hbound
   by_contra! hu
   have hmul := Nat.mul_le_mul_right D hu
-  have hlt : Q * m < 2 * m * D := by
-    calc
-      Q * m < (2 * D) * m := Nat.mul_lt_mul_of_pos_right hQ (by omega)
-      _ = 2 * m * D := by ring
-  exact (not_lt_of_ge hmul) (hbound.trans_lt hlt)
+  have hQ' : 2*Q < 5*D := hQ
+  have hlt := Nat.mul_lt_mul_of_pos_right hQ' (Nat.pos_of_ne_zero hm0)
+  nlinarith only [hbound,hmul,hlt]
 
 end BoundedOddAbundance
 
@@ -477,7 +497,7 @@ private theorem square_of_even_factorization {m : ℕ} (hm0 : m ≠ 0)
     Nat.div_two_mul_two_of_even (h p (Nat.prime_of_mem_primeFactors hp))]
 
 theorem excludes_even_small_support_residue {n : ℕ} (hn : Even n)
-    (hcard : n.primeFactors.card ≤ 7) (hodd : Odd (sigma 1 n))
+    (hcard : n.primeFactors.card ≤ 16) (hodd : Odd (sigma 1 n))
     (ha : n.factorization 2 % 4 = 3 ∨ n.factorization 2 % 10 = 9) :
     sigma 1 n % n ≠ 5 := by
   intro hmod
@@ -525,7 +545,7 @@ theorem excludes_even_small_support_residue {n : ℕ} (hn : Even n)
     simp only [← Nat.support_factorization, hf, Finsupp.support_erase]
   have h2mem : 2 ∈ n.primeFactors :=
     Nat.Prime.mem_primeFactors Nat.prime_two hn.two_dvd hn0
-  have hmcard : m.primeFactors.card ≤ 6 := by
+  have hmcard : m.primeFactors.card ≤ 15 := by
     rw [hfs, Finset.card_erase_of_mem h2mem]
     omega
   have hmSq : IsSquare m := by
@@ -540,7 +560,7 @@ theorem excludes_even_small_support_residue {n : ℕ} (hn : Even n)
       · have hzero : n.factorization p=0 := Finsupp.notMem_support_iff.mp
           (by rwa [Nat.support_factorization])
         simp [hzero]
-  have hsmall := BoundedOddAbundance.sigma_lt_two_of_small_prime_support hmOdd hm3 hmcard
+  have hsmall := BoundedOddAbundance.scaled_sigma_lt_five_of_small_prime_support hmOdd hm3 hmcard
   exact excludes_of_odd_part_abundance ha hmpos hmSq hsmall heq
 
 end SigmaEvenValuationGeneric
@@ -563,19 +583,19 @@ def H2 : Prop :=
       n.factorization p % 4 = 2) →
     n.factorization 2 = 2 → sigma 1 n % n ≠ 5
 
-/-- Valuation at least three and three through seven support primes, after
+/-- Valuation at least three and three through sixteen support primes, after
 excluding the two congruence classes of the valuation. -/
 def H3 : Prop :=
-  ∀ n : ℕ, Even n → 3 ≤ n.primeFactors.card → n.primeFactors.card ≤ 7 →
+  ∀ n : ℕ, Even n → 3 ≤ n.primeFactors.card → n.primeFactors.card ≤ 16 →
     Odd (sigma 1 n) → 4 ∣ n →
     (∃ p : ℕ, p ∈ n.primeFactors ∧ Nat.Prime p ∧ p % 4 = 1 ∧
       n.factorization p % 4 = 2) →
     3 ≤ n.factorization 2 → n.factorization 2 % 4 ≠ 3 →
     n.factorization 2 % 10 ≠ 9 → sigma 1 n % n ≠ 5
 
-/-- Valuation at least three and support of at least eight primes. -/
+/-- Valuation at least three and support of at least seventeen primes. -/
 def H4 : Prop :=
-  ∀ n : ℕ, Even n → 8 ≤ n.primeFactors.card → Odd (sigma 1 n) → 4 ∣ n →
+  ∀ n : ℕ, Even n → 17 ≤ n.primeFactors.card → Odd (sigma 1 n) → 4 ∣ n →
     (∃ p : ℕ, p ∈ n.primeFactors ∧ Nat.Prime p ∧ p % 4 = 1 ∧
       n.factorization p % 4 = 2) →
     3 ≤ n.factorization 2 → sigma 1 n % n ≠ 5
@@ -594,7 +614,7 @@ theorem main : H1 → H2 → H3 → H4 → OMA.R_OeisA76495_conjecture_R2.H4 := 
     · exact h23 n heven hc hodd hfour hseed hv hmod
     · exact h24 n heven (by omega) hodd hfour hseed hv hmod
   · have hv3 : 3 ≤ n.factorization 2 := by omega
-    by_cases hc : n.primeFactors.card ≤ 7
+    by_cases hc : n.primeFactors.card ≤ 16
     · by_cases hres : n.factorization 2 % 4 = 3 ∨ n.factorization 2 % 10 = 9
       · exact SigmaEvenValuationGeneric.excludes_even_small_support_residue heven hc hodd hres hmod
       · exact hlo n heven hcard hc hodd hfour hseed hv3
