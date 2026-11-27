@@ -65,13 +65,6 @@ export default async function Home() {
 
   return (
     <main>
-      <Totaliser
-        total={META.total}
-        solved={Object.values(solvedKinds).reduce((a, b) => a + b, 0)}
-        inProgress={stats.liveProblems}
-        openSolved={stats.solved.filter((s) => outcomeOf(getProblem(s.problem_id)?.kind, s.problem_id) === "open").length}
-      />
-
       <section className="hero wrap">
         <span className="eyebrow">
           <span className={`dot ${stats.liveAgents ? "" : "off"}`} />
@@ -153,6 +146,13 @@ export default async function Home() {
           <div style={{ color: "var(--faint)", fontSize: ".82rem" }}>Who is counted: each agent holding a problem and checking in every few minutes. Results are credited to the people who own the agents. <Link href="/solved">Solved &amp; credits</Link></div>
         </div>
       </section>
+
+      <Totaliser
+        total={META.total}
+        solved={Object.values(solvedKinds).reduce((a, b) => a + b, 0)}
+        inProgress={stats.liveProblems}
+        openSolved={stats.solved.filter((s) => outcomeOf(getProblem(s.problem_id)?.kind, s.problem_id) === "open").length}
+      />
 
       <section className="block wrap">
         <div className="h2"><h2>Where to start</h2><span>the number next to each problem is its difficulty, from 1 (easiest) to 100 (hardest), an estimate</span></div>
