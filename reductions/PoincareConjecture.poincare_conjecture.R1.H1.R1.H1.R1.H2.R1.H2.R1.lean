@@ -31,7 +31,10 @@ private theorem coverPushoutSquare {X : Type} [TopologicalSpace X] (A B : Set X)
 The small chains subordinate to a two-open cover are the pushout of the two
 subspace chain complexes along their intersection. The geometric obligation
 is that this pushout maps quasi-isomorphically to all singular chains, by
-barycentric subdivision. The remaining relative comparison is formal.
+barycentric subdivision. This chain model follows `IntegralCoverHomology.lean`
+and `IntegralRelativeChains.lean` in FrenzyMath/PoincareConjecture at
+62db01af9388dc1d9b56b66d6674f4c09b2318a2 (Apache-2.0). The remaining relative
+comparison is formal.
 -/
 
 set_option maxHeartbeats 2000000 in
